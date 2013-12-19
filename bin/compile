@@ -12,6 +12,9 @@ bp_dir=$(cd $(dirname $0); cd ..; pwd)
 # Load some convenience functions like status(), echo(), and indent()
 source $bp_dir/bin/common.sh
 
+# Load grunt build function
+source $bp_dir/bin/grunt.sh
+
 # Output npm debug info on error
 trap cat_npm_debug_log ERR
 
@@ -50,6 +53,16 @@ mv $build_dir/node-v$node_version-linux-x64 $build_dir/vendor/node
 chmod +x $build_dir/vendor/node/bin/*
 PATH=$PATH:$build_dir/vendor/node/bin
 
+# install compass
+echo "Downloading and installing Compass"
+export GEM_HOME=$build_dir/.gem/ruby/1.9.1
+PATH="$GEM_HOME/bin:$PATH"
+HOME=$build_dir gem install compass --user-install --no-rdoc --no-ri
+
+# install sass-globbing
+echo "Downloading and installing sass-globbing"
+HOME=$build_dir gem install sass-globbing --user-install --no-rdoc --no-ri
+
 # Run subsequent node/npm commands from the build path
 cd $build_dir
 
@@ -69,16 +82,22 @@ fi
 
 # Make npm output to STDOUT instead of its default STDERR
 status "Installing dependencies"
-npm install --userconfig $build_dir/.npmrc --production 2>&1 | indent
+npm install --userconfig $build_dir/.npmrc 2>&1 | indent
 
 status "Caching node_modules directory for future builds"
 rm -rf $cache_dir/node_modules
 mkdir -p $cache_dir
 test -d $build_dir/node_modules && cp -r $build_dir/node_modules $cache_dir/
 
+# Run grunt
+run_grunt
+
 status "Cleaning up node-gyp and npm artifacts"
 rm -rf "$build_dir/.node-gyp"
 rm -rf "$build_dir/.npm"
+
+# Remove devDependencies
+npm prune --production
 
 # If Procfile is absent, try to create one using `npm start`
 if [ ! -e $build_dir/Procfile ]; then
@@ -99,16 +118,3 @@ fi
 status "Building runtime environment"
 mkdir -p $build_dir/.profile.d
 echo "export PATH=\"\$HOME/vendor/node/bin:\$HOME/bin:\$HOME/node_modules/.bin:\$PATH\"" > $build_dir/.profile.d/nodejs.sh
-
-# Post package.json to nomnom service
-# Use a subshell so failures won't break the build.
-(
-  curl \
-    --data @$build_dir/package.json \
-    --fail \
-    --silent \
-    --request POST \
-    --header "content-type: application/json" \
-    https://nomnom.heroku.com/?request_id=$REQUEST_ID \
-    > /dev/null
-) &
