@@ -101,6 +101,10 @@ status "Cleaning up node-gyp and npm artifacts"
 rm -rf "$build_dir/.node-gyp"
 rm -rf "$build_dir/.npm"
 
+status "Cleaning up ruby and compass artificats"
+rm -rf "$build_dir/.tmp"
+rm -rf "$build_dir/.gem"
+
 # Remove devDependencies
 npm prune --production
 
