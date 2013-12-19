@@ -81,8 +81,9 @@ elif test -d $cache_dir/node_modules; then
 fi
 
 # make sure that grunt and grunt-cli are installed locally
-npm install grunt-cli --save-dev
-npm install grunt --save-dev
+status "Downloading and installing grunt"
+npm install grunt-cli --silent
+npm install grunt --silent
 
 # Make npm output to STDOUT instead of its default STDERR
 status "Installing dependencies"
