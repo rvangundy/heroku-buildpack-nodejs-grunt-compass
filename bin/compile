@@ -80,6 +80,10 @@ elif test -d $cache_dir/node_modules; then
   npm prune 2>&1 | indent
 fi
 
+# make sure that grunt and grunt-cli are installed locally
+npm install grunt-cli --save-dev
+npm install grunt --save-dev
+
 # Make npm output to STDOUT instead of its default STDERR
 status "Installing dependencies"
 npm install --userconfig $build_dir/.npmrc 2>&1 | indent
